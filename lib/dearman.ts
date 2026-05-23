@@ -45,6 +45,22 @@ export async function getLatestDearman(
   return data as DearmanEntry | null;
 }
 
+export async function getReflectedDearmans(
+  userId: string,
+  limit = 10
+): Promise<DearmanEntry[]> {
+  const { data, error } = await db
+    .from("skill_entries")
+    .select("id, status, data, updated_at, created_at")
+    .eq("user_id", userId)
+    .eq("skill_id", DEARMAN_SKILL_ID)
+    .eq("status", "reflected")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as DearmanEntry[];
+}
+
 export async function createDearman(userId: string): Promise<DearmanEntry> {
   const { data, error } = await db
     .from("skill_entries")

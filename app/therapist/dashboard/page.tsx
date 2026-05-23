@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { getStudentWeekSummary } from "@/lib/student-summary";
 
 export default async function Dashboard() {
   const me = await requireSession();
@@ -11,19 +12,24 @@ export default async function Dashboard() {
     .eq("linked_clinician_id", me.id)
     .order("name");
 
+  const list = students ?? [];
+  const summaries = await Promise.all(
+    list.map((s) => getStudentWeekSummary(s.id))
+  );
+
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-medium text-foreground">Students</h1>
         <p className="text-foreground-muted mt-1">
-          {students && students.length > 0
-            ? `${students.length} student${students.length === 1 ? "" : "s"}`
+          {list.length > 0
+            ? `${list.length} student${list.length === 1 ? "" : "s"}`
             : "No students yet."}
         </p>
       </header>
 
       <div className="grid gap-3">
-        {(students ?? []).map((s) => (
+        {list.map((s, i) => (
           <Link
             key={s.id}
             href={`/therapist/students/${s.id}`}
@@ -31,7 +37,7 @@ export default async function Dashboard() {
           >
             <div className="font-medium text-foreground">{s.name}</div>
             <div className="text-sm text-foreground-muted mt-0.5">
-              No activity this week yet
+              {summaries[i].text}
             </div>
           </Link>
         ))}
