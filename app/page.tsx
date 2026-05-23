@@ -8,7 +8,8 @@ export default async function LoginPage() {
     redirect(me.role === "student" ? "/student/home" : "/therapist/dashboard");
   }
 
-  const { students, clinicians } = await listDemoAccounts();
+  const { seededStudents, customStudents, clinicians } =
+    await listDemoAccounts();
 
   return (
     <main className="flex-1 flex items-center justify-center px-6 py-12">
@@ -22,7 +23,11 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        <LoginButtons students={students} clinicians={clinicians} />
+        <LoginButtons
+          seededStudents={seededStudents}
+          customStudents={customStudents}
+          clinicians={clinicians}
+        />
 
         <p className="mt-10 text-xs text-foreground-muted text-center leading-relaxed">
           Demo mode — this uses fictional shared data. Anything entered here

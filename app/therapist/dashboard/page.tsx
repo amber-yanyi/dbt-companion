@@ -13,13 +13,23 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-medium text-foreground">Students</h1>
-        <p className="text-foreground-muted mt-1">
-          {overview.total > 0
-            ? `${overview.total} student${overview.total === 1 ? "" : "s"}`
-            : "No students yet."}
-        </p>
+      <header className="flex items-baseline justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-medium text-foreground">Students</h1>
+          <p className="text-foreground-muted mt-1">
+            {overview.total > 0
+              ? `${overview.total} student${overview.total === 1 ? "" : "s"}`
+              : "No students yet."}
+          </p>
+        </div>
+        {overview.total > 0 && (
+          <Link
+            href="/therapist/assign"
+            className="text-sm px-4 py-2 bg-surface border border-border rounded-xl text-foreground hover:border-accent transition-colors whitespace-nowrap"
+          >
+            Assign focus to multiple →
+          </Link>
+        )}
       </header>
 
       <ThisWeekAtAGlance overview={overview} />

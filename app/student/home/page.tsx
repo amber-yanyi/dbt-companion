@@ -5,7 +5,9 @@ import { getCurrentDearman } from "@/lib/dearman";
 import { getCurrentAssignment } from "@/lib/assignments";
 import { todayISO } from "@/lib/week";
 import { getFocusSkill } from "@/lib/skills/registry";
+import { isSeeded } from "@/lib/seeded-users";
 import { DearmanHomeCard } from "@/components/dearman/home-card";
+import { DeleteDemoStudent } from "@/components/student/delete-demo-student";
 
 export default async function StudentHome() {
   const me = await requireSession();
@@ -64,6 +66,8 @@ export default async function StudentHome() {
           Browse DBT skills you can use anytime.
         </p>
       </Link>
+
+      {!isSeeded(me.id) && <DeleteDemoStudent name={me.name} />}
     </div>
   );
 }

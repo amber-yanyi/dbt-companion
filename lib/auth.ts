@@ -51,21 +51,56 @@ export type DemoAccount = {
   id: string;
   role: UserRole;
   name: string;
+  isSeeded: boolean;
 };
 
 export async function listDemoAccounts(): Promise<{
-  students: DemoAccount[];
+  seededStudents: DemoAccount[];
+  customStudents: DemoAccount[];
   clinicians: DemoAccount[];
 }> {
   const { data, error } = await db
     .from("users")
-    .select("id, role, name")
-    .order("role", { ascending: false })
-    .order("name");
-  if (error || !data) return { students: [], clinicians: [] };
-  const all = data as DemoAccount[];
-  return {
-    students: all.filter((u) => u.role === "student"),
-    clinicians: all.filter((u) => u.role === "clinician"),
-  };
+    .select("id, role, name, created_at")
+    .order("created_at", { ascending: true });
+  if (error || !data) {
+    return { seededStudents: [], customStudents: [], clinicians: [] };
+  }
+  const { isSeeded, seededOrderRank } = await import("./seeded-users");
+  const all = (data as { id: string; role: UserRole; name: string }[]).map(
+    (u) => ({ ...u, isSeeded: isSeeded(u.id) })
+  );
+  const students = all.filter((u) => u.role === "student");
+  const seededStudents = students
+    .filter((u) => u.isSeeded)
+    .sort((a, b) => seededOrderRank(a.id) - seededOrderRank(b.id));
+  const customStudents = students
+    .filter((u) => !u.isSeeded)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const clinicians = all.filter((u) => u.role === "clinician");
+  return { seededStudents, customStudents, clinicians };
+}
+
+export async function createDemoStudent(name: string): Promise<{ id: string }> {
+  const cleaned = name.trim();
+  if (!cleaned) throw new Error("Name required");
+  if (cleaned.length > 40) throw new Error("Name too long");
+  const { data: clinician } = await db
+    .from("users")
+    .select("id")
+    .eq("role", "clinician")
+    .limit(1)
+    .single();
+  if (!clinician) throw new Error("No clinician available");
+  const { data, error } = await db
+    .from("users")
+    .insert({
+      role: "student",
+      name: cleaned,
+      linked_clinician_id: clinician.id,
+    })
+    .select("id")
+    .single();
+  if (error || !data) throw error ?? new Error("Failed to create student");
+  return { id: data.id as string };
 }
