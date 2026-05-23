@@ -81,6 +81,16 @@ export async function listDemoAccounts(): Promise<{
   return { seededStudents, customStudents, clinicians };
 }
 
+export async function userHasAnyEntries(userId: string): Promise<boolean> {
+  const { data, error } = await db
+    .from("skill_entries")
+    .select("id")
+    .eq("user_id", userId)
+    .limit(1);
+  if (error) return false;
+  return (data?.length ?? 0) > 0;
+}
+
 export async function createDemoStudent(name: string): Promise<{ id: string }> {
   const cleaned = name.trim();
   if (!cleaned) throw new Error("Name required");

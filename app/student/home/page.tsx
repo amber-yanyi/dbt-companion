@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireSession } from "@/lib/auth";
+import { requireSession, userHasAnyEntries } from "@/lib/auth";
 import { getPleaseEntry } from "@/lib/please";
 import { getCurrentDearman } from "@/lib/dearman";
 import { getCurrentAssignment } from "@/lib/assignments";
@@ -14,14 +14,18 @@ export default async function StudentHome() {
   if (me.role !== "student") return null;
 
   const today = todayISO();
-  const [todayEntry, currentDearman, assignment] = await Promise.all([
-    getPleaseEntry(me.id, today),
-    getCurrentDearman(me.id),
-    getCurrentAssignment(me.id),
-  ]);
+  const [todayEntry, currentDearman, assignment, hasEntries] =
+    await Promise.all([
+      getPleaseEntry(me.id, today),
+      getCurrentDearman(me.id),
+      getCurrentAssignment(me.id),
+      userHasAnyEntries(me.id),
+    ]);
   const loggedToday = !!todayEntry;
   const focus = getFocusSkill(assignment?.focus_skill_id);
   const pleaseEnabled = assignment?.daily_checkins.includes("please") ?? false;
+  const seeded = isSeeded(me.id);
+  const showWelcome = !seeded && !assignment && !hasEntries;
 
   return (
     <div className="space-y-6">
@@ -30,7 +34,11 @@ export default async function StudentHome() {
         <p className="text-foreground-muted mt-1">Welcome back.</p>
       </section>
 
-      <FocusCard focus={focus} note={assignment?.note ?? null} />
+      {showWelcome ? (
+        <WelcomeCard />
+      ) : (
+        <FocusCard focus={focus} note={assignment?.note ?? null} />
+      )}
 
       {currentDearman && <DearmanHomeCard entry={currentDearman} />}
 
@@ -67,8 +75,30 @@ export default async function StudentHome() {
         </p>
       </Link>
 
-      {!isSeeded(me.id) && <DeleteDemoStudent name={me.name} />}
+      {!seeded && <DeleteDemoStudent name={me.name} />}
     </div>
+  );
+}
+
+function WelcomeCard() {
+  return (
+    <section className="bg-accent-soft/40 border border-accent/20 rounded-2xl p-6">
+      <h2 className="text-foreground font-medium">Welcome</h2>
+      <p className="text-foreground-muted mt-2 leading-relaxed">
+        This is a space for practicing skills between sessions. Your clinician
+        can set a focus for the week — until then, you can explore skills on
+        your own.
+      </p>
+      <Link
+        href="/student/skills"
+        className="inline-block mt-5 px-5 py-2.5 bg-accent text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+      >
+        Browse skills
+      </Link>
+      <p className="mt-5 text-xs text-foreground-muted leading-relaxed">
+        In this demo, anything you log may be visible to Dr. Park.
+      </p>
+    </section>
   );
 }
 
