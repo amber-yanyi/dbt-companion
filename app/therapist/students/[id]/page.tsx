@@ -4,11 +4,16 @@ import { requireSession } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getPleaseEntriesForDates } from "@/lib/please";
 import { getLatestDearman } from "@/lib/dearman";
+import { getCurrentAssignment } from "@/lib/assignments";
+import { getClinicianNote } from "@/lib/notes";
+import { getStudentWeekSummary } from "@/lib/student-summary";
 import { last7Days } from "@/lib/week";
 import { PleaseWeekGrid } from "@/components/please/please-week-grid";
 import { PleasePatterns } from "@/components/please/please-patterns";
 import { PleaseEntryList } from "@/components/please/please-entry-list";
 import { DearmanClinicianSection } from "@/components/dearman/clinician-section";
+import { AssignmentForm } from "@/components/assignment/assignment-form";
+import { NotesEditor } from "@/components/clinician/notes-editor";
 
 export default async function StudentDetail({
   params,
@@ -29,29 +34,15 @@ export default async function StudentDetail({
     notFound();
   }
 
-  const [weekEntries, latestDearman] = await Promise.all([
-    getPleaseEntriesForDates(student.id, last7Days()),
-    getLatestDearman(student.id),
-  ]);
+  const [weekEntries, latestDearman, assignment, note, summary] =
+    await Promise.all([
+      getPleaseEntriesForDates(student.id, last7Days()),
+      getLatestDearman(student.id),
+      getCurrentAssignment(student.id),
+      getClinicianNote(me.id, student.id),
+      getStudentWeekSummary(student.id),
+    ]);
   const entryCount = Object.keys(weekEntries).length;
-
-  const summaryBits: string[] = [];
-  if (latestDearman) {
-    summaryBits.push(
-      latestDearman.status === "reflected"
-        ? "DEARMAN reflected"
-        : latestDearman.status === "planned"
-          ? "DEARMAN planned"
-          : "DEARMAN in progress"
-    );
-  }
-  if (entryCount > 0) {
-    summaryBits.push(
-      `${entryCount} PLEASE ${entryCount === 1 ? "entry" : "entries"}`
-    );
-  }
-  const summary =
-    summaryBits.length > 0 ? summaryBits.join(" · ") : "No activity this week yet.";
 
   return (
     <div className="space-y-8">
@@ -66,14 +57,23 @@ export default async function StudentDetail({
 
       <header>
         <h1 className="text-2xl font-medium text-foreground">{student.name}</h1>
-        <p className="text-foreground-muted mt-1">{summary}</p>
+        <p className="text-foreground-muted mt-1">{summary.text}</p>
       </header>
 
       <section className="bg-surface border border-border rounded-2xl p-6">
         <h2 className="text-sm font-medium text-foreground-muted uppercase tracking-wide">
-          This week
+          This week&rsquo;s assignment
         </h2>
-        <p className="mt-3 text-foreground">No focus set for this week.</p>
+        <div className="mt-5">
+          <AssignmentForm
+            studentId={student.id}
+            initial={{
+              focusSkillId: assignment?.focus_skill_id ?? null,
+              dailyCheckins: assignment?.daily_checkins ?? [],
+              note: assignment?.note ?? "",
+            }}
+          />
+        </div>
       </section>
 
       {latestDearman && <DearmanClinicianSection entry={latestDearman} />}
@@ -91,6 +91,10 @@ export default async function StudentDetail({
             <PleaseEntryList entries={weekEntries} />
           </div>
         )}
+      </section>
+
+      <section className="bg-surface border border-border rounded-2xl p-6">
+        <NotesEditor studentId={student.id} initialContent={note} />
       </section>
     </div>
   );
