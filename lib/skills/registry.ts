@@ -1,6 +1,11 @@
 export const FOCUS_SKILLS = [
   { id: "dearman", name: "DEARMAN", route: "/student/skills/dearman" },
   { id: "please", name: "PLEASE", route: "/student/checkin" },
+  {
+    id: "opposite-action",
+    name: "Opposite Action",
+    route: "/student/skills/opposite-action",
+  },
 ] as const;
 
 export const DAILY_CHECKIN_SKILLS = [

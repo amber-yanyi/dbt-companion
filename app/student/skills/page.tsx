@@ -6,6 +6,17 @@ const SKILLS = [
     name: "DEARMAN",
     when: "When you have a conversation you want to approach intentionally.",
   },
+  {
+    slug: "opposite-action",
+    name: "Opposite Action",
+    when:
+      "When an emotion is more intense than the situation calls for, or the urge would hurt you.",
+  },
+  {
+    slug: "observe-describe",
+    name: "Observe & Describe",
+    when: "When you want to slow down and get out of your head.",
+  },
 ] as const;
 
 export default function SkillsLibrary() {
