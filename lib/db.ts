@@ -1,8 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-export const DEMO_CLINICIAN_ID = "00000000-0000-0000-0000-000000000001";
-export const DEMO_STUDENT_ID = "00000000-0000-0000-0000-000000000002";
-
 let _db: SupabaseClient | null = null;
 
 export function getDb(): SupabaseClient {

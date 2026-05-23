@@ -3,26 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function RoleSwitcher({ currentRole }: { currentRole: "student" | "clinician" }) {
+export function RoleSwitcher({
+  name,
+}: {
+  name: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const other = currentRole === "student" ? "clinician" : "student";
 
-  async function flip() {
+  async function switchAccount() {
     setPending(true);
-    const res = await fetch("/api/demo-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: other, action: "switch" }),
-    });
-    const json = await res.json();
-    if (json.redirect) {
-      router.push(json.redirect);
-      router.refresh();
-    }
-  }
-
-  async function signOut() {
     await fetch("/api/demo-auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -36,19 +26,14 @@ export function RoleSwitcher({ currentRole }: { currentRole: "student" | "clinic
       <span className="px-2 py-0.5 rounded-full bg-accent-soft text-accent font-medium">
         Demo
       </span>
+      <span className="text-foreground-muted">Signed in as {name}</span>
+      <span className="text-border">·</span>
       <button
-        onClick={flip}
+        onClick={switchAccount}
         disabled={pending}
         className="text-foreground-muted hover:text-foreground transition-colors disabled:opacity-50"
       >
-        View as {other}
-      </button>
-      <span className="text-border">·</span>
-      <button
-        onClick={signOut}
-        className="text-foreground-muted hover:text-foreground transition-colors"
-      >
-        Sign out
+        Switch account
       </button>
     </div>
   );

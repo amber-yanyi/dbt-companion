@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { db, DEMO_CLINICIAN_ID, DEMO_STUDENT_ID } from "./db";
+import { db } from "./db";
 
 const COOKIE_NAME = "dbt_user";
 
@@ -11,8 +11,7 @@ export type SessionUser = {
   name: string;
 };
 
-export async function setSession(role: UserRole) {
-  const userId = role === "student" ? DEMO_STUDENT_ID : DEMO_CLINICIAN_ID;
+export async function setSession(userId: string) {
   const jar = await cookies();
   jar.set(COOKIE_NAME, userId, {
     httpOnly: true,
@@ -46,4 +45,27 @@ export async function requireSession(): Promise<SessionUser> {
   const user = await getSession();
   if (!user) throw new Error("No session");
   return user;
+}
+
+export type DemoAccount = {
+  id: string;
+  role: UserRole;
+  name: string;
+};
+
+export async function listDemoAccounts(): Promise<{
+  students: DemoAccount[];
+  clinicians: DemoAccount[];
+}> {
+  const { data, error } = await db
+    .from("users")
+    .select("id, role, name")
+    .order("role", { ascending: false })
+    .order("name");
+  if (error || !data) return { students: [], clinicians: [] };
+  const all = data as DemoAccount[];
+  return {
+    students: all.filter((u) => u.role === "student"),
+    clinicians: all.filter((u) => u.role === "clinician"),
+  };
 }
