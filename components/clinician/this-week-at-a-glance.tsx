@@ -6,6 +6,30 @@ const SKILL_NAME: Record<string, string> = {
   [OPPOSITE_ACTION_SKILL_ID]: "Opposite Action",
 };
 
+const DEARMAN_STATUS_ORDER: Record<string, number> = {
+  reflected: 0,
+  planned: 1,
+  in_progress: 2,
+  not_started: 3,
+};
+
+function dearmanStatusKey(s: StudentOverview): string {
+  return s.dearmanStatus ?? "not_started";
+}
+
+function dearmanStatusLabel(s: StudentOverview): string {
+  switch (s.dearmanStatus) {
+    case "reflected":
+      return "reflected";
+    case "planned":
+      return "plan ready";
+    case "in_progress":
+      return `in progress, ${s.dearmanStepsFilled}/10`;
+    default:
+      return "not started";
+  }
+}
+
 export function ThisWeekAtAGlance({
   overview,
 }: {
@@ -13,22 +37,19 @@ export function ThisWeekAtAGlance({
 }) {
   if (overview.total === 0) return null;
 
-  const reflected = overview.perStudent.filter(
-    (s) => s.dearmanStatus === "reflected"
-  );
-  const planned = overview.perStudent.filter(
-    (s) => s.dearmanStatus === "planned"
-  );
-  const inProgress = overview.perStudent.filter(
-    (s) => s.dearmanStatus === "in_progress"
-  );
-  const noDearman = overview.perStudent.filter(
-    (s) => s.dearmanStatus === null
-  );
+  const dearmanSorted = [...overview.perStudent].sort((a, b) => {
+    const da =
+      DEARMAN_STATUS_ORDER[dearmanStatusKey(a)] ?? 99;
+    const db =
+      DEARMAN_STATUS_ORDER[dearmanStatusKey(b)] ?? 99;
+    if (da !== db) return da - db;
+    return a.name.localeCompare(b.name);
+  });
 
-  const pleaseLogged = overview.perStudent.filter(
-    (s) => s.pleaseEntryCount > 0
-  );
+  const pleaseLogged = overview.perStudent
+    .filter((s) => s.pleaseEntryCount > 0)
+    .sort((a, b) => b.pleaseEntryCount - a.pleaseEntryCount);
+
   const lowSleep = overview.perStudent.filter(
     (s) => s.sleepAvg !== null && s.sleepAvg < 7
   );
@@ -40,7 +61,7 @@ export function ThisWeekAtAGlance({
   const quiet = overview.perStudent.filter((s) => !s.hasAnyActivity);
 
   return (
-    <section className="bg-surface border border-border rounded-2xl p-6 space-y-6">
+    <section className="bg-surface border border-border rounded-2xl p-6 space-y-7">
       <div>
         <h2 className="text-sm font-medium text-foreground-muted uppercase tracking-wide">
           This week at a glance
@@ -52,40 +73,37 @@ export function ThisWeekAtAGlance({
       </div>
 
       <Block title="DEARMAN">
-        {reflected.length > 0 && (
-          <Line label="Reflected" people={reflected} />
-        )}
-        {planned.length > 0 && <Line label="Plan ready" people={planned} />}
-        {inProgress.length > 0 && (
-          <Line
-            label="Planning in progress"
-            people={inProgress}
-            renderName={(s) => `${s.name} (${s.dearmanStepsFilled}/10)`}
-          />
-        )}
-        {noDearman.length > 0 && (
-          <Line label="Not started" people={noDearman} muted />
-        )}
+        {dearmanSorted.map((s) => (
+          <StudentLine key={s.id} student={s} status={dearmanStatusLabel(s)} muted={s.dearmanStatus === null} />
+        ))}
       </Block>
 
       <Block title="PLEASE">
         {pleaseLogged.length > 0 ? (
-          <Line
-            label="Logged"
-            people={pleaseLogged}
-            renderName={(s) => `${s.name} (${s.pleaseEntryCount})`}
-          />
+          pleaseLogged.map((s) => (
+            <StudentLine
+              key={s.id}
+              student={s}
+              status={pleaseStatus(s)}
+            />
+          ))
         ) : (
           <p className="text-sm text-foreground-muted">
             No PLEASE entries this week.
           </p>
         )}
         {lowSleep.length > 0 && (
-          <Line
-            label="Sleep averaging under 7h"
-            people={lowSleep}
-            renderName={(s) => `${s.name} (${s.sleepAvg!.toFixed(1)}h)`}
-          />
+          <PatternCallout>
+            Sleep averaging under 7h:{" "}
+            {lowSleep.map((s, i) => (
+              <span key={s.id}>
+                <StudentName student={s} />
+                {i < lowSleep.length - 1 && (
+                  <span className="text-foreground-muted">, </span>
+                )}
+              </span>
+            ))}
+          </PatternCallout>
         )}
       </Block>
 
@@ -93,24 +111,13 @@ export function ThisWeekAtAGlance({
         <Block title="Other activity">
           {withLibraryLogs.map((s) => {
             const skills = Array.from(
-              new Set(s.libraryLogs.map((l) => SKILL_NAME[l.skillId] ?? l.skillId))
+              new Set(
+                s.libraryLogs.map((l) => SKILL_NAME[l.skillId] ?? l.skillId)
+              )
             );
             const anySelfInit = s.libraryLogs.some((l) => l.selfInitiated);
-            return (
-              <div key={s.id} className="text-sm">
-                <Link
-                  href={`/therapist/students/${s.id}`}
-                  className="text-foreground hover:underline"
-                >
-                  {s.name}
-                </Link>
-                <span className="text-foreground-muted">
-                  {" "}
-                  — {skills.join(", ")}
-                  {anySelfInit && " (self-initiated)"}
-                </span>
-              </div>
-            );
+            const status = `${skills.join(", ")}${anySelfInit ? " (self-initiated)" : ""}`;
+            return <StudentLine key={s.id} student={s} status={status} />;
           })}
         </Block>
       )}
@@ -120,12 +127,7 @@ export function ThisWeekAtAGlance({
           <div className="text-sm">
             {quiet.map((s, i) => (
               <span key={s.id}>
-                <Link
-                  href={`/therapist/students/${s.id}`}
-                  className="text-foreground hover:underline"
-                >
-                  {s.name}
-                </Link>
+                <StudentName student={s} />
                 {i < quiet.length - 1 && (
                   <span className="text-foreground-muted">, </span>
                 )}
@@ -138,6 +140,16 @@ export function ThisWeekAtAGlance({
   );
 }
 
+function pleaseStatus(s: StudentOverview): string {
+  const parts = [
+    `${s.pleaseEntryCount} ${s.pleaseEntryCount === 1 ? "entry" : "entries"}`,
+  ];
+  if (s.sleepAvg !== null) {
+    parts.push(`sleep avg ${s.sleepAvg.toFixed(1)}h`);
+  }
+  return parts.join(" · ");
+}
+
 function Block({
   title,
   children,
@@ -147,7 +159,7 @@ function Block({
 }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-foreground-muted font-medium mb-2">
+      <div className="text-xs uppercase tracking-wide text-foreground-muted font-medium mb-3">
         {title}
       </div>
       <div className="space-y-1.5">{children}</div>
@@ -155,39 +167,49 @@ function Block({
   );
 }
 
-function Line({
-  label,
-  people,
-  renderName,
+function StudentLine({
+  student,
+  status,
   muted,
 }: {
-  label: string;
-  people: StudentOverview[];
-  renderName?: (s: StudentOverview) => string;
+  student: StudentOverview;
+  status: string;
   muted?: boolean;
 }) {
-  if (people.length === 0) return null;
   return (
-    <div className="text-sm">
-      <span className={muted ? "text-foreground-muted" : "text-foreground-muted"}>
-        {label}:
-      </span>{" "}
-      {people.map((s, i) => (
-        <span key={s.id}>
-          <Link
-            href={`/therapist/students/${s.id}`}
-            className={
-              "hover:underline " +
-              (muted ? "text-foreground-muted" : "text-foreground")
-            }
-          >
-            {renderName ? renderName(s) : s.name}
-          </Link>
-          {i < people.length - 1 && (
-            <span className="text-foreground-muted">, </span>
-          )}
-        </span>
-      ))}
+    <div className="text-sm flex items-baseline gap-2 flex-wrap">
+      <StudentName student={student} muted={muted} />
+      <span className={muted ? "text-foreground-muted/80" : "text-foreground-muted"}>
+        — {status}
+      </span>
+    </div>
+  );
+}
+
+function StudentName({
+  student,
+  muted,
+}: {
+  student: StudentOverview;
+  muted?: boolean;
+}) {
+  return (
+    <Link
+      href={`/therapist/students/${student.id}`}
+      className={
+        "font-medium hover:underline " +
+        (muted ? "text-foreground-muted" : "text-foreground")
+      }
+    >
+      {student.name}
+    </Link>
+  );
+}
+
+function PatternCallout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-3 pt-3 border-t border-border text-sm text-foreground-muted">
+      {children}
     </div>
   );
 }

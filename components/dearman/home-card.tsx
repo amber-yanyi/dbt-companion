@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DearmanEntry } from "@/lib/dearman";
+import { AbandonMenu } from "./abandon-menu";
 
 const PLAN_KEYS = [
   "situation",
@@ -22,30 +23,35 @@ export function DearmanHomeCard({ entry }: { entry: DearmanEntry }) {
   }).length;
 
   return (
-    <Link
-      href="/student/skills/dearman"
-      className="block bg-surface border border-border rounded-2xl p-6 hover:border-accent transition-colors"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-foreground font-medium">DEARMAN</h2>
-          {entry.data.situation && (
-            <p className="text-sm text-foreground-muted mt-1 line-clamp-2">
-              {entry.data.situation}
+    <div className="relative bg-surface border border-border rounded-2xl hover:border-accent transition-colors">
+      <Link
+        href="/student/skills/dearman"
+        className="block p-6 pr-14"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-foreground font-medium">DEARMAN</h2>
+            {entry.data.situation && (
+              <p className="text-sm text-foreground-muted mt-1 line-clamp-2">
+                {entry.data.situation}
+              </p>
+            )}
+            <p className="text-sm text-foreground-muted mt-2">
+              {planned
+                ? "Plan ready — come back when you've had the conversation."
+                : `Pick up where you left off — ${filled} of ${PLAN_KEYS.length} steps.`}
             </p>
+          </div>
+          {planned && (
+            <span className="text-xs text-accent bg-accent-soft px-2 py-0.5 rounded-full mt-1 whitespace-nowrap">
+              Ready
+            </span>
           )}
-          <p className="text-sm text-foreground-muted mt-2">
-            {planned
-              ? "Plan ready — come back when you've had the conversation."
-              : `Pick up where you left off — ${filled} of ${PLAN_KEYS.length} steps.`}
-          </p>
         </div>
-        {planned && (
-          <span className="text-xs text-accent bg-accent-soft px-2 py-0.5 rounded-full mt-1 whitespace-nowrap">
-            Ready
-          </span>
-        )}
+      </Link>
+      <div className="absolute top-3 right-3">
+        <AbandonMenu />
       </div>
-    </Link>
+    </div>
   );
 }

@@ -17,6 +17,13 @@ export function DearmanArchivedView({ entry }: { entry: DearmanEntry }) {
         </div>
       )}
 
+      {data.relationship_goal && (
+        <div>
+          <div className="text-xs text-foreground-muted">Relationship goal</div>
+          <div className="text-foreground mt-0.5">{data.relationship_goal}</div>
+        </div>
+      )}
+
       {scriptText && (
         <div>
           <div className="text-xs text-foreground-muted mb-2">
