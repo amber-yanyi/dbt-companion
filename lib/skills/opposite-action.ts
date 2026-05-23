@@ -6,6 +6,7 @@ export type OppositeActionData = {
   situation: string;
   shift?: OppositeActionShift | null;
   note?: string | null;
+  flagged?: boolean;
 };
 
 export const SHIFT_LABEL: Record<OppositeActionShift, string> = {

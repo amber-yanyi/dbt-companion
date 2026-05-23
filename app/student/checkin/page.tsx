@@ -4,6 +4,7 @@ import { getPleaseEntry, getPleaseEntriesForDates } from "@/lib/please";
 import { todayISO, last7Days, formatLongDate } from "@/lib/week";
 import { PleaseForm } from "@/components/please/please-form";
 import { PleaseWeekGrid } from "@/components/please/please-week-grid";
+import { PleaseEntryList } from "@/components/please/please-entry-list";
 
 export default async function CheckinPage() {
   const me = await requireSession();
@@ -43,6 +44,11 @@ export default async function CheckinPage() {
           </span>
         </div>
         <PleaseWeekGrid entries={weekEntries} />
+        {entryCount > 0 && (
+          <div className="mt-6">
+            <PleaseEntryList entries={weekEntries} interactive />
+          </div>
+        )}
       </section>
     </div>
   );

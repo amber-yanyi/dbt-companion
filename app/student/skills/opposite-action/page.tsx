@@ -6,6 +6,7 @@ import {
   OppositeActionData,
   SHIFT_LABEL,
 } from "@/lib/skills/opposite-action";
+import { FlagButton } from "@/components/flag-button";
 
 export default async function OppositeActionPage() {
   const me = await requireSession();
@@ -106,11 +107,17 @@ function LogItem({
     <li className="bg-surface border border-border rounded-2xl p-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div className="text-sm font-medium text-foreground">{whenLabel}</div>
-        {shiftLabel && (
-          <span className="text-xs text-foreground bg-accent-soft/60 px-3 py-1 rounded-full">
-            {shiftLabel}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {shiftLabel && (
+            <span className="text-xs text-foreground bg-accent-soft/60 px-3 py-1 rounded-full">
+              {shiftLabel}
+            </span>
+          )}
+          <FlagButton
+            entryId={entry.id}
+            flagged={entry.data.flagged ?? false}
+          />
+        </div>
       </div>
       <p className="text-foreground mt-2 leading-relaxed whitespace-pre-wrap">
         {entry.data.situation}

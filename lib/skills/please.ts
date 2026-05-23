@@ -20,6 +20,7 @@ export type PleaseData = {
     present: boolean;
     note?: string;
   } | null;
+  flagged?: boolean;
 };
 
 export function emptyPleaseEntry(date: string): PleaseData {

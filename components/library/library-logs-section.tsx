@@ -4,6 +4,7 @@ import {
   OppositeActionData,
   SHIFT_LABEL,
 } from "@/lib/skills/opposite-action";
+import { FlagBadge } from "@/components/flag-badge";
 
 const SKILL_NAME: Record<string, string> = {
   [OPPOSITE_ACTION_SKILL_ID]: "Opposite Action",
@@ -65,6 +66,7 @@ function LogRow({
             {skillName} · <span className="text-foreground-muted font-normal">{whenLabel}</span>
           </div>
           <div className="flex items-center gap-2">
+            {data.flagged && <FlagBadge />}
             {selfInitiated && (
               <span
                 className="text-[10px] uppercase tracking-wide text-accent bg-accent-soft px-2 py-0.5 rounded-full"

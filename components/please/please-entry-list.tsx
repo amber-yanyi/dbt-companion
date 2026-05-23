@@ -1,38 +1,53 @@
+import { PleaseDayEntry } from "@/lib/please";
 import { PleaseData } from "@/lib/skills/please";
 import { formatLongDate } from "@/lib/week";
+import { FlagButton } from "@/components/flag-button";
+import { FlagBadge } from "@/components/flag-badge";
 
 export function PleaseEntryList({
   entries,
+  interactive = false,
 }: {
-  entries: Record<string, PleaseData>;
+  entries: Record<string, PleaseDayEntry>;
+  interactive?: boolean;
 }) {
   const sorted = Object.values(entries).sort((a, b) =>
-    a.date < b.date ? 1 : -1
+    a.data.date < b.data.date ? 1 : -1
   );
   if (sorted.length === 0) return null;
   return (
     <ul className="space-y-4">
       {sorted.map((entry) => (
-        <li key={entry.date} className="border-l-2 border-border pl-4 py-0.5">
-          <div className="text-sm font-medium text-foreground">
-            {formatLongDate(entry.date)}
+        <li key={entry.id} className="border-l-2 border-border pl-4 py-0.5">
+          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+            <div className="text-sm font-medium text-foreground">
+              {formatLongDate(entry.data.date)}
+            </div>
+            {interactive ? (
+              <FlagButton
+                entryId={entry.id}
+                flagged={entry.data.flagged ?? false}
+              />
+            ) : (
+              entry.data.flagged && <FlagBadge />
+            )}
           </div>
           <div className="text-sm text-foreground-muted mt-0.5">
-            {summarize(entry)}
+            {summarize(entry.data)}
           </div>
-          {entry.substances?.used && (
+          {entry.data.substances?.used && (
             <div className="text-sm text-foreground-muted mt-1.5">
               <span className="text-foreground-muted">Substances</span>
-              {entry.substances.note && (
-                <span className="text-foreground"> — {entry.substances.note}</span>
+              {entry.data.substances.note && (
+                <span className="text-foreground"> — {entry.data.substances.note}</span>
               )}
             </div>
           )}
-          {entry.illness?.present && (
+          {entry.data.illness?.present && (
             <div className="text-sm text-foreground-muted mt-1.5">
               <span className="text-foreground-muted">Not feeling well</span>
-              {entry.illness.note && (
-                <span className="text-foreground"> — {entry.illness.note}</span>
+              {entry.data.illness.note && (
+                <span className="text-foreground"> — {entry.data.illness.note}</span>
               )}
             </div>
           )}

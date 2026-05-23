@@ -19,10 +19,21 @@ export type StudentOverview = {
   hasAnyActivity: boolean;
 };
 
+export type FlaggedEntry = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  skillId: string;
+  status: string;
+  updatedAt: string;
+  dateLabel: string | null;
+};
+
 export type DashboardOverview = {
   total: number;
   active: number;
   perStudent: StudentOverview[];
+  flagged: FlaggedEntry[];
 };
 
 const PLAN_KEYS = DEARMAN_PLAN_STEPS.map((s) => s.key);
@@ -61,7 +72,7 @@ export async function getDashboardOverview(
           : null;
 
       const sleeps = Object.values(pleaseEntries)
-        .map((e) => e.sleep_hours)
+        .map((e) => e.data.sleep_hours)
         .filter((v): v is number => typeof v === "number");
       const sleepAvg =
         sleeps.length >= 3
@@ -96,9 +107,54 @@ export async function getDashboardOverview(
     })
   );
 
+  const flagged = await getFlaggedEntries(
+    list.map((s) => ({ id: s.id as string, name: s.name as string }))
+  );
+
   return {
     total: list.length,
     active: perStudent.filter((s) => s.hasAnyActivity).length,
     perStudent,
+    flagged,
   };
+}
+
+async function getFlaggedEntries(
+  students: { id: string; name: string }[]
+): Promise<FlaggedEntry[]> {
+  if (students.length === 0) return [];
+  const { data, error } = await db
+    .from("skill_entries")
+    .select("id, user_id, skill_id, status, data, updated_at")
+    .in(
+      "user_id",
+      students.map((s) => s.id)
+    )
+    .filter("data->>flagged", "eq", "true")
+    .order("updated_at", { ascending: false });
+  if (error) return [];
+  const byId: Record<string, string> = {};
+  students.forEach((s) => {
+    byId[s.id] = s.name;
+  });
+  return (data ?? []).map((row) => {
+    const r = row as {
+      id: string;
+      user_id: string;
+      skill_id: string;
+      status: string;
+      data: Record<string, unknown>;
+      updated_at: string;
+    };
+    const dateLabel = typeof r.data?.date === "string" ? r.data.date : null;
+    return {
+      id: r.id,
+      studentId: r.user_id,
+      studentName: byId[r.user_id] ?? "Student",
+      skillId: r.skill_id,
+      status: r.status,
+      updatedAt: r.updated_at,
+      dateLabel,
+    };
+  });
 }

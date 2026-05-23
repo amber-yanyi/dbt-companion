@@ -1,10 +1,10 @@
-import { PleaseData } from "@/lib/skills/please";
+import { PleaseDayEntry } from "@/lib/please";
 import { last7Days, shortWeekday, dayOfMonth, todayISO } from "@/lib/week";
 
 export function PleaseWeekGrid({
   entries,
 }: {
-  entries: Record<string, PleaseData>;
+  entries: Record<string, PleaseDayEntry>;
 }) {
   const days = last7Days();
   const today = todayISO();
@@ -34,9 +34,17 @@ export function PleaseWeekGrid({
   );
 }
 
-function DayDot({ entry }: { entry: PleaseData | undefined }) {
+function DayDot({ entry }: { entry: PleaseDayEntry | undefined }) {
   if (!entry) {
     return <div className="w-2 h-2 rounded-full bg-border" aria-label="no entry" />;
+  }
+  if (entry.data.flagged) {
+    return (
+      <div
+        className="w-2 h-2 rounded-full bg-accent ring-2 ring-accent/30"
+        aria-label="logged and flagged"
+      />
+    );
   }
   return <div className="w-2 h-2 rounded-full bg-accent" aria-label="logged" />;
 }

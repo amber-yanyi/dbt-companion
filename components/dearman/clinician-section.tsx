@@ -1,5 +1,6 @@
 import { DearmanEntry } from "@/lib/dearman";
 import { composeDearmanScript } from "@/lib/skills/dearman";
+import { FlagBadge } from "@/components/flag-badge";
 
 export function DearmanClinicianSection({ entry }: { entry: DearmanEntry }) {
   const { data, status, updated_at } = entry;
@@ -31,9 +32,12 @@ export function DearmanClinicianSection({ entry }: { entry: DearmanEntry }) {
   return (
     <section className="bg-surface border border-border rounded-2xl p-6 space-y-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
-        <h2 className="text-sm font-medium text-foreground-muted uppercase tracking-wide">
-          DEARMAN
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-medium text-foreground-muted uppercase tracking-wide">
+            DEARMAN
+          </h2>
+          {data.flagged && <FlagBadge />}
+        </div>
         <span className="text-xs text-foreground-muted">{statusLabel}</span>
       </div>
 

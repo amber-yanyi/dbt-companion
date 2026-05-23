@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { DearmanEntry } from "@/lib/dearman";
 import { composeDearmanScript } from "@/lib/skills/dearman";
+import { FlagButton } from "@/components/flag-button";
 
 export function DearmanArchivedView({ entry }: { entry: DearmanEntry }) {
   const { data } = entry;
@@ -10,6 +12,9 @@ export function DearmanArchivedView({ entry }: { entry: DearmanEntry }) {
 
   return (
     <div className="space-y-4 pt-4">
+      <div className="flex justify-end -mt-2">
+        <FlagButton entryId={entry.id} flagged={data.flagged ?? false} />
+      </div>
       {data.concrete_goal && (
         <div>
           <div className="text-xs text-foreground-muted">What you wanted</div>
@@ -36,6 +41,17 @@ export function DearmanArchivedView({ entry }: { entry: DearmanEntry }) {
       )}
 
       {data.reflection && <ReflectionBlock reflection={data.reflection} />}
+
+      {data.reflection && (
+        <div className="pt-2">
+          <Link
+            href={`/student/skills/dearman/reflect/${entry.id}`}
+            className="text-sm text-foreground-muted hover:text-foreground transition-colors"
+          >
+            Edit reflection →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

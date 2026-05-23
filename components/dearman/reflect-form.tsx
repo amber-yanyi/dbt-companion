@@ -2,20 +2,36 @@
 
 import { useState, useTransition } from "react";
 import { saveDearmanReflection } from "@/app/student/skills/dearman/reflect/actions";
+import { updateReflection } from "@/app/student/skills/dearman/reflect/[id]/actions";
 import { DearmanReflection } from "@/lib/skills/dearman";
 
 type Happened = "yes" | "no" | "postponed";
 type GotWhat = "yes" | "partially" | "no";
 type Relationship = "better" | "same" | "worse";
 
-export function ReflectForm() {
-  const [happened, setHappened] = useState<Happened | null>(null);
-  const [overall, setOverall] = useState<number | null>(null);
-  const [gotWhat, setGotWhat] = useState<GotWhat | null>(null);
-  const [relationship, setRelationship] = useState<Relationship | null>(null);
-  const [notes, setNotes] = useState("");
+export function ReflectForm({
+  initial,
+  entryId,
+}: {
+  initial?: DearmanReflection;
+  entryId?: string;
+}) {
+  const [happened, setHappened] = useState<Happened | null>(
+    initial?.happened ?? null
+  );
+  const [overall, setOverall] = useState<number | null>(
+    initial?.overall ?? null
+  );
+  const [gotWhat, setGotWhat] = useState<GotWhat | null>(
+    initial?.got_what_asked ?? null
+  );
+  const [relationship, setRelationship] = useState<Relationship | null>(
+    initial?.relationship ?? null
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [pending, startTransition] = useTransition();
 
+  const isEditMode = !!entryId;
   const happenedYes = happened === "yes";
   const canSubmit = happened !== null;
 
@@ -29,7 +45,11 @@ export function ReflectForm() {
       ...(notes.trim() ? { notes: notes.trim() } : {}),
     };
     startTransition(async () => {
-      await saveDearmanReflection(reflection);
+      if (isEditMode && entryId) {
+        await updateReflection(entryId, reflection);
+      } else {
+        await saveDearmanReflection(reflection);
+      }
     });
   }
 
@@ -54,7 +74,10 @@ export function ReflectForm() {
 
       {happenedYes && (
         <>
-          <Field label="How did it go overall?" helper="1 = not at all what you hoped, 5 = it went well.">
+          <Field
+            label="How did it go overall?"
+            helper="1 = not at all what you hoped, 5 = it went well."
+          >
             <ChipRow>
               {[1, 2, 3, 4, 5].map((n) => (
                 <Chip key={n} active={overall === n} onClick={() => setOverall(n)}>
@@ -109,7 +132,14 @@ export function ReflectForm() {
       )}
 
       {happened !== null && (
-        <Field label="Anything else worth noting?" helper="Optional.">
+        <Field
+          label={
+            isEditMode
+              ? "Anything you want to add or change?"
+              : "Anything else worth noting?"
+          }
+          helper="Optional."
+        >
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -127,7 +157,11 @@ export function ReflectForm() {
           disabled={!canSubmit || pending}
           className="px-5 py-2.5 bg-accent text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {pending ? "Saving…" : "Save reflection"}
+          {pending
+            ? "Saving…"
+            : isEditMode
+              ? "Update reflection"
+              : "Save reflection"}
         </button>
       </div>
     </div>

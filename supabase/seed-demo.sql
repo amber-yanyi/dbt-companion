@@ -61,6 +61,7 @@ insert into skill_entries (user_id, skill_id, status, data, created_at, updated_
    "appear": "Sit down at the kitchen table, even tone, look at her. Don''t apologize for bringing it up.",
    "negotiate": "If 24 hours is too tight, I could live with 36 — but I want a number we both stick to, not ''eventually.''",
    "script": "Hey, I want to talk about something that''s been bothering me. Over the past couple of weeks I''ve come home most evenings to find dishes piling up in the sink. I feel anxious and a bit resentful when I have to clean someone else''s dishes before I can use the kitchen. Can we agree to wash our own dishes within 24 hours of using them? It would help us both come home to a clean space.",
+   "flagged": true,
    "reflection": {
      "happened": "yes",
      "overall": 4,
@@ -80,7 +81,7 @@ insert into skill_entries (user_id, skill_id, status, data, created_at, updated_
  '{"date":"2026-05-19","sleep_hours":6,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false}}'::jsonb,
  '2026-05-19T22:50:00Z', '2026-05-19T22:50:00Z'),
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
- '{"date":"2026-05-21","sleep_hours":7,"exercise_level":"moderate","exercise_minutes":30,"meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false}}'::jsonb,
+ '{"date":"2026-05-21","sleep_hours":7,"exercise_level":"moderate","exercise_minutes":30,"meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false},"flagged":true}'::jsonb,
  '2026-05-21T22:18:00Z', '2026-05-21T22:18:00Z'),
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
  '{"date":"2026-05-22","sleep_hours":6.5,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":false},"illness":{"present":false}}'::jsonb,

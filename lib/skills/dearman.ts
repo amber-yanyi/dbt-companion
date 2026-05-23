@@ -21,6 +21,7 @@ export type DearmanData = {
   negotiate?: string;
   script?: string;
   reflection?: DearmanReflection;
+  flagged?: boolean;
 };
 
 export type DearmanStatus = "in_progress" | "planned" | "reflected";

@@ -22,21 +22,26 @@ export async function getPleaseEntry(
   return data as EntryRow | null;
 }
 
+export type PleaseDayEntry = {
+  id: string;
+  data: PleaseData;
+};
+
 export async function getPleaseEntriesForDates(
   userId: string,
   dates: string[]
-): Promise<Record<string, PleaseData>> {
+): Promise<Record<string, PleaseDayEntry>> {
   const { data, error } = await db
     .from("skill_entries")
-    .select("data")
+    .select("id, data")
     .eq("user_id", userId)
     .eq("skill_id", PLEASE_SKILL_ID)
     .in("data->>date", dates);
   if (error) throw error;
-  const out: Record<string, PleaseData> = {};
+  const out: Record<string, PleaseDayEntry> = {};
   for (const row of data ?? []) {
-    const d = (row as { data: PleaseData }).data;
-    if (d?.date) out[d.date] = d;
+    const r = row as { id: string; data: PleaseData };
+    if (r.data?.date) out[r.data.date] = { id: r.id, data: r.data };
   }
   return out;
 }

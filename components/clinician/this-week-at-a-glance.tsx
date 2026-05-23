@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { DashboardOverview, StudentOverview } from "@/lib/dashboard-overview";
+import {
+  DashboardOverview,
+  StudentOverview,
+  FlaggedEntry,
+} from "@/lib/dashboard-overview";
 import { OPPOSITE_ACTION_SKILL_ID } from "@/lib/skills/opposite-action";
+import { DEARMAN_SKILL_ID } from "@/lib/skills/dearman";
+import { PLEASE_SKILL_ID } from "@/lib/skills/please";
 
 const SKILL_NAME: Record<string, string> = {
   [OPPOSITE_ACTION_SKILL_ID]: "Opposite Action",
@@ -122,6 +128,14 @@ export function ThisWeekAtAGlance({
         </Block>
       )}
 
+      {overview.flagged.length > 0 && (
+        <Block title="★ Flagged for discussion">
+          {overview.flagged.map((f) => (
+            <FlaggedLine key={f.id} flagged={f} />
+          ))}
+        </Block>
+      )}
+
       {quiet.length > 0 && (
         <Block title="Quiet this week">
           <div className="text-sm">
@@ -138,6 +152,44 @@ export function ThisWeekAtAGlance({
       )}
     </section>
   );
+}
+
+function FlaggedLine({ flagged }: { flagged: FlaggedEntry }) {
+  const label = flaggedLabel(flagged);
+  return (
+    <div className="text-sm">
+      <Link
+        href={`/therapist/students/${flagged.studentId}`}
+        className="text-foreground font-medium hover:underline"
+      >
+        {flagged.studentName}
+      </Link>
+      <span className="text-foreground-muted"> — {label}</span>
+    </div>
+  );
+}
+
+function flaggedLabel(f: FlaggedEntry): string {
+  if (f.skillId === DEARMAN_SKILL_ID) {
+    if (f.status === "reflected") return "DEARMAN reflection";
+    if (f.status === "planned") return "DEARMAN plan";
+    return "DEARMAN in progress";
+  }
+  if (f.skillId === PLEASE_SKILL_ID) {
+    if (f.dateLabel) {
+      const d = new Date(f.dateLabel + "T00:00:00Z");
+      const weekday = d.toLocaleDateString("en-US", {
+        weekday: "long",
+        timeZone: "UTC",
+      });
+      return `${weekday}'s PLEASE check-in`;
+    }
+    return "PLEASE check-in";
+  }
+  if (f.skillId === OPPOSITE_ACTION_SKILL_ID) {
+    return "Opposite Action log";
+  }
+  return f.skillId;
 }
 
 function pleaseStatus(s: StudentOverview): string {
