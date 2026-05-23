@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/auth";
 import { getPleaseEntry } from "@/lib/please";
+import { getCurrentDearman } from "@/lib/dearman";
 import { todayISO } from "@/lib/week";
+import { DearmanHomeCard } from "@/components/dearman/home-card";
 
 export default async function StudentHome() {
   const me = await requireSession();
   if (me.role !== "student") return null;
 
   const today = todayISO();
-  const todayEntry = await getPleaseEntry(me.id, today);
+  const [todayEntry, currentDearman] = await Promise.all([
+    getPleaseEntry(me.id, today),
+    getCurrentDearman(me.id),
+  ]);
   const loggedToday = !!todayEntry;
 
   return (
@@ -26,6 +31,8 @@ export default async function StudentHome() {
           No focus set yet — your clinician will share one when you next meet.
         </p>
       </section>
+
+      {currentDearman && <DearmanHomeCard entry={currentDearman} />}
 
       <Link
         href="/student/checkin"
