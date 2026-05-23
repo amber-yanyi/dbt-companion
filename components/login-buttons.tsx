@@ -65,10 +65,10 @@ export function LoginButtons({
 }
 
 const STUDENT_HINTS: Record<string, string> = {
-  Maya: "Reflected DEARMAN this week",
-  Luke: "DEARMAN started but stuck",
-  Sarah: "Just observing sleep",
-  Jordan: "Hasn't engaged this week",
+  Maya: "DEARMAN reflected this week",
+  Luke: "DEARMAN in progress",
+  Sarah: "PLEASE check-ins only",
+  Jordan: "No activity this week yet",
 };
 
 const CLINICIAN_HINTS: Record<string, string> = {

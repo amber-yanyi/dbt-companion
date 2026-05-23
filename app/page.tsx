@@ -24,9 +24,9 @@ export default async function LoginPage() {
 
         <LoginButtons students={students} clinicians={clinicians} />
 
-        <p className="mt-10 text-xs text-foreground-muted text-center">
-          Demo mode — accounts are shared. Anything you log is visible to
-          anyone else using this demo URL.
+        <p className="mt-10 text-xs text-foreground-muted text-center leading-relaxed">
+          Demo mode — this uses fictional shared data. Anything entered here
+          may be visible to others with the demo link.
         </p>
       </div>
     </main>
