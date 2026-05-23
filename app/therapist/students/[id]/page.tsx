@@ -6,6 +6,7 @@ import { getPleaseEntriesForDates } from "@/lib/please";
 import { last7Days } from "@/lib/week";
 import { PleaseWeekGrid } from "@/components/please/please-week-grid";
 import { PleasePatterns } from "@/components/please/please-patterns";
+import { PleaseEntryList } from "@/components/please/please-entry-list";
 
 export default async function StudentDetail({
   params,
@@ -61,6 +62,11 @@ export default async function StudentDetail({
         </div>
         <PleaseWeekGrid entries={weekEntries} />
         <PleasePatterns entries={weekEntries} />
+        {entryCount > 0 && (
+          <div className="pt-2">
+            <PleaseEntryList entries={weekEntries} />
+          </div>
+        )}
       </section>
     </div>
   );
