@@ -1,8 +1,27 @@
 -- DBT Companion · demo seed
 -- Wipes existing data and reseeds with 4 students under one clinician.
 -- Run this in the Supabase SQL editor after schema.sql has been applied.
+--
+-- All dates are anchored to the current ISO week's Monday, so the demo
+-- always lives in "this week" no matter when the seed is run.
+
+set timezone = 'UTC';
 
 truncate skill_entries, assignments, clinician_notes restart identity cascade;
+
+-- Date helpers: offsets from current Monday.
+--   _wk(N)         → date         : this Monday + N days
+--   _wkts(N, H, M) → timestamptz  : this Monday + N days at H:M UTC
+create or replace function _wk(days int) returns date as $$
+  select (date_trunc('week', current_date) + (days || ' days')::interval)::date
+$$ language sql stable;
+
+create or replace function _wkts(days int, h int, m int) returns timestamptz as $$
+  select date_trunc('week', current_date)
+       + (days || ' days')::interval
+       + (h || ' hours')::interval
+       + (m || ' minutes')::interval
+$$ language sql stable;
 
 -- Users (idempotent)
 insert into users (id, role, name, linked_clinician_id) values
@@ -30,23 +49,23 @@ where role = 'student'
   );
 
 -- ────────────────────────────────────────────────────────────────────────
--- Assignments (week of 2026-05-18, Monday)
+-- Assignments (this week, Monday-anchored)
 -- ────────────────────────────────────────────────────────────────────────
 insert into assignments (student_id, clinician_id, week_starting, focus_skill_id, daily_checkins, note) values
-  ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', '2026-05-18', 'dearman', array['please']::text[],
+  ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', _wk(0), 'dearman', array['please']::text[],
    'We talked about using DEARMAN with Alex about the kitchen. Take your time — the goal is to feel ready before the actual conversation, not to rush.'),
-  ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', '2026-05-18', 'dearman', array['please']::text[],
+  ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', _wk(0), 'dearman', array['please']::text[],
    'No deadline this week. When you''re ready to tell your dad, the planning is here. Just chip at it.'),
-  ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', '2026-05-18', 'please', array['please']::text[],
+  ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', _wk(0), 'please', array['please']::text[],
    'Let''s just observe your sleep and routines this week. Nothing to change yet — just notice.'),
-  ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000001', '2026-05-18', 'dearman', array['please']::text[],
+  ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000001', _wk(0), 'dearman', array['please']::text[],
    'If this week feels like a lot, that''s okay. The conversation with your sister can wait. We''ll talk Monday either way.');
 
 -- ────────────────────────────────────────────────────────────────────────
 -- Maya — full happy path
 -- ────────────────────────────────────────────────────────────────────────
 
--- DEARMAN reflected
+-- DEARMAN reflected (planned Tue, reflected Thu)
 insert into skill_entries (user_id, skill_id, status, data, created_at, updated_at) values
 ('00000000-0000-0000-0000-000000000002', 'dearman', 'reflected',
  '{
@@ -70,25 +89,59 @@ insert into skill_entries (user_id, skill_id, status, data, created_at, updated_
      "notes": "Alex got a little defensive at first — said she''d been busy with midterms and felt like I was attacking her. I stayed calm and came back to the ask. We ended up settling on 36 hours instead of 24. Honestly the bigger thing was just saying it out loud — I''d been avoiding her for two weeks."
    }
  }'::jsonb,
- '2026-05-19T20:14:00Z', '2026-05-21T22:08:00Z');
+ _wkts(1, 20, 14), _wkts(3, 22, 8));
 
 -- PLEASE entries (skipping Wed and Sun — sparse is normal)
 insert into skill_entries (user_id, skill_id, status, data, created_at, updated_at) values
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
- '{"date":"2026-05-18","sleep_hours":5.5,"exercise_level":"light","exercise_minutes":20,"meals":{"breakfast":true,"lunch":true,"dinner":false},"illness":{"present":false}}'::jsonb,
- '2026-05-18T22:30:00Z', '2026-05-18T22:30:00Z'),
+ jsonb_build_object(
+   'date', _wk(0),
+   'sleep_hours', 5.5,
+   'exercise_level', 'light',
+   'exercise_minutes', 20,
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', false),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(0, 22, 30), _wkts(0, 22, 30)),
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
- '{"date":"2026-05-19","sleep_hours":6,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false}}'::jsonb,
- '2026-05-19T22:50:00Z', '2026-05-19T22:50:00Z'),
+ jsonb_build_object(
+   'date', _wk(1),
+   'sleep_hours', 6,
+   'exercise_level', 'none',
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', true),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(1, 22, 50), _wkts(1, 22, 50)),
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
- '{"date":"2026-05-21","sleep_hours":7,"exercise_level":"moderate","exercise_minutes":30,"meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false},"flagged":true}'::jsonb,
- '2026-05-21T22:18:00Z', '2026-05-21T22:18:00Z'),
+ jsonb_build_object(
+   'date', _wk(3),
+   'sleep_hours', 7,
+   'exercise_level', 'moderate',
+   'exercise_minutes', 30,
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', true),
+   'illness', jsonb_build_object('present', false),
+   'flagged', true
+ ),
+ _wkts(3, 22, 18), _wkts(3, 22, 18)),
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
- '{"date":"2026-05-22","sleep_hours":6.5,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":false},"illness":{"present":false}}'::jsonb,
- '2026-05-22T23:11:00Z', '2026-05-22T23:11:00Z'),
+ jsonb_build_object(
+   'date', _wk(4),
+   'sleep_hours', 6.5,
+   'exercise_level', 'none',
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', false),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(4, 23, 11), _wkts(4, 23, 11)),
 ('00000000-0000-0000-0000-000000000002', 'please', 'logged',
- '{"date":"2026-05-23","sleep_hours":6,"exercise_level":"light","exercise_minutes":15,"meals":{"breakfast":true,"lunch":false,"dinner":false},"illness":{"present":false}}'::jsonb,
- '2026-05-23T11:40:00Z', '2026-05-23T11:40:00Z');
+ jsonb_build_object(
+   'date', _wk(5),
+   'sleep_hours', 6,
+   'exercise_level', 'light',
+   'exercise_minutes', 15,
+   'meals', jsonb_build_object('breakfast', true, 'lunch', false, 'dinner', false),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(5, 11, 40), _wkts(5, 11, 40));
 
 -- Opposite Action — self-initiated Saturday
 insert into skill_entries (user_id, skill_id, status, data, created_at) values
@@ -98,7 +151,7 @@ insert into skill_entries (user_id, skill_id, status, data, created_at) values
    "shift": "some",
    "note": "Went to study group at the library. Anxiety didn''t vanish but I stopped spinning."
  }'::jsonb,
- '2026-05-23T14:22:00Z');
+ _wkts(5, 14, 22));
 
 -- ────────────────────────────────────────────────────────────────────────
 -- Luke — DEARMAN stuck at step 5/10
@@ -113,16 +166,28 @@ insert into skill_entries (user_id, skill_id, status, data, created_at, updated_
    "describe": "I haven''t actually been doing MCAT prep for the last six months. I''ve been taking philosophy classes that don''t fit the pre-med track. I want to officially switch my major next semester but I haven''t told him yet.",
    "express": "I feel like I''ve been carrying a secret for months. I''m exhausted from the small lies on every phone call."
  }'::jsonb,
- '2026-05-19T23:02:00Z', '2026-05-20T00:48:00Z');
+ _wkts(1, 23, 2), _wkts(2, 0, 48));
 
 -- PLEASE — sparse
 insert into skill_entries (user_id, skill_id, status, data, created_at, updated_at) values
 ('00000000-0000-0000-0000-000000000003', 'please', 'logged',
- '{"date":"2026-05-18","sleep_hours":4.5,"exercise_level":"none","meals":{"breakfast":false,"lunch":true,"dinner":false},"illness":{"present":false}}'::jsonb,
- '2026-05-19T01:10:00Z', '2026-05-19T01:10:00Z'),
+ jsonb_build_object(
+   'date', _wk(0),
+   'sleep_hours', 4.5,
+   'exercise_level', 'none',
+   'meals', jsonb_build_object('breakfast', false, 'lunch', true, 'dinner', false),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(1, 1, 10), _wkts(1, 1, 10)),
 ('00000000-0000-0000-0000-000000000003', 'please', 'logged',
- '{"date":"2026-05-20","sleep_hours":5,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":false},"illness":{"present":false}}'::jsonb,
- '2026-05-20T22:40:00Z', '2026-05-20T22:40:00Z');
+ jsonb_build_object(
+   'date', _wk(2),
+   'sleep_hours', 5,
+   'exercise_level', 'none',
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', false),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(2, 22, 40), _wkts(2, 22, 40));
 
 -- ────────────────────────────────────────────────────────────────────────
 -- Sarah — PLEASE only, no DEARMAN
@@ -130,17 +195,43 @@ insert into skill_entries (user_id, skill_id, status, data, created_at, updated_
 
 insert into skill_entries (user_id, skill_id, status, data, created_at, updated_at) values
 ('00000000-0000-0000-0000-000000000004', 'please', 'logged',
- '{"date":"2026-05-18","sleep_hours":5.5,"exercise_level":"moderate","exercise_minutes":45,"meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false}}'::jsonb,
- '2026-05-18T22:00:00Z', '2026-05-18T22:00:00Z'),
+ jsonb_build_object(
+   'date', _wk(0),
+   'sleep_hours', 5.5,
+   'exercise_level', 'moderate',
+   'exercise_minutes', 45,
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', true),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(0, 22, 0), _wkts(0, 22, 0)),
 ('00000000-0000-0000-0000-000000000004', 'please', 'logged',
- '{"date":"2026-05-19","sleep_hours":6,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":false},"illness":{"present":false}}'::jsonb,
- '2026-05-19T22:10:00Z', '2026-05-19T22:10:00Z'),
+ jsonb_build_object(
+   'date', _wk(1),
+   'sleep_hours', 6,
+   'exercise_level', 'none',
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', false),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(1, 22, 10), _wkts(1, 22, 10)),
 ('00000000-0000-0000-0000-000000000004', 'please', 'logged',
- '{"date":"2026-05-20","sleep_hours":6.5,"exercise_level":"light","exercise_minutes":20,"meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false}}'::jsonb,
- '2026-05-20T22:30:00Z', '2026-05-20T22:30:00Z'),
+ jsonb_build_object(
+   'date', _wk(2),
+   'sleep_hours', 6.5,
+   'exercise_level', 'light',
+   'exercise_minutes', 20,
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', true),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(2, 22, 30), _wkts(2, 22, 30)),
 ('00000000-0000-0000-0000-000000000004', 'please', 'logged',
- '{"date":"2026-05-22","sleep_hours":6,"exercise_level":"none","meals":{"breakfast":true,"lunch":true,"dinner":true},"illness":{"present":false}}'::jsonb,
- '2026-05-22T22:45:00Z', '2026-05-22T22:45:00Z');
+ jsonb_build_object(
+   'date', _wk(4),
+   'sleep_hours', 6,
+   'exercise_level', 'none',
+   'meals', jsonb_build_object('breakfast', true, 'lunch', true, 'dinner', true),
+   'illness', jsonb_build_object('present', false)
+ ),
+ _wkts(4, 22, 45), _wkts(4, 22, 45));
 
 -- ────────────────────────────────────────────────────────────────────────
 -- Jordan — assigned but no activity
@@ -159,3 +250,7 @@ insert into clinician_notes (clinician_id, student_id, content) values
  'Sleep average around 6h all week — consistent pattern, not a one-off. Sarah doesn''t see it as a problem yet. Want to gently raise it without making her defensive.'),
 ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000005',
  'Jordan no-engaged this week. In Monday''s session he was flat. Could be a low patch, could be ambivalence about the work. Check in early in next session before going to content.');
+
+-- Clean up helpers so they don't linger in the schema
+drop function _wk(int);
+drop function _wkts(int, int, int);
